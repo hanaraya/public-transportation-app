@@ -1,0 +1,7 @@
+{
+  "name": "public-transportation-app",
+  "devDependencies": {
+    "browser-sync": "^2.11.1",
+    "gulp": "^3.9.1"
+  }
+}

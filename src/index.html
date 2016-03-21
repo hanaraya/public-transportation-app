@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Bart Schedule</title>
+</head>
+<body>
+	<header class="header">Bart Schedule</header>
+	<div class="main">
+		<form>
+			<label for="from-station">
+				<span>From</span>
+				<input id="from-station" type="text" list="station-list" placeholder="From Station" required="true"/>
+			</label>
+			<label for="to-station">
+				<span>To</span>
+				<input id="to-station" type="text" placeholder="To Station" list="station-list"/>
+			</label>
+			<datalist id="station-list">
+				<option value="Fremont" abbreviation="FRM"/>
+			</datalist>
+		</form>
+	</div>
+	<script type="text/javascript" src="js/main.js"></script>
+</body>
+</html>
