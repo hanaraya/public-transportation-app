@@ -80,3 +80,15 @@ function xmlToJson(xml) {
 	}
 	return obj;
 };
+
+openDatabase();
+
+function openDatabase(){
+	//If service worker is not supported return. No need to open database
+	if(!navigator.serviceWorker){
+		return Promise.resolve();
+	}
+	idb.open('bart',1 ,function(upgradeDb){
+		var store = upgradeDb.createObjectStore('stations', {keyPath : 'abbr'})
+	} );
+}
