@@ -81,6 +81,7 @@ function showOfflineStations(){
 		var defaultStore = db.transaction('default').objectStore('default');
 		var origin, destination;
 		defaultStore.get('from').then(function(valueObj){
+			if(!valueObj) return;
 			origin = valueObj.value;
 			if(valueObj){
 				fromStationInput.value = valueObj.displayValue;
@@ -89,6 +90,7 @@ function showOfflineStations(){
 				showPopulateSchedule(origin, destination);
 		});
 		defaultStore.get('to').then(function(valueObj){
+			if(!valueObj) return;
 			destination = valueObj.value;
 			if(valueObj){
 				toStationInput.value = valueObj.displayValue;
