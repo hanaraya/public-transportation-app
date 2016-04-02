@@ -11,3 +11,4 @@ References:
 
 1. Bart API - http://api.bart.gov/docs/overview/index.aspx
 2. Lots of Udacity supporting courses :-)
+3. XML To JSON : https://davidwalsh.name/convert-xml-json
