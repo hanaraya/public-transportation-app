@@ -2,25 +2,33 @@
 <html>
 <head>
 	<title>Bart Schedule</title>
+	<link rel="stylesheet" type="text/css" href="css/styles.css">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 </head>
 <body>
-	<header class="header">Bart Schedule</header>
+	<header>
+		<div class="header-text">Bart Schedule</div>
+	</header>
 	<div class="main">
-		<form>
-			<label for="from-station">
-				<span>From</span>
-				<input id="from-station" type="text" list="station-list" placeholder="From Station" required="true"/>
-			</label>
-			<label for="to-station">
-				<span>To</span>
-				<input id="to-station" type="text" placeholder="To Station" list="station-list"/>
-			</label>
-			<datalist id="station-list">
-				<option value="Fremont" abbreviation="FRM"/>
-			</datalist>
-		</form>
-	</div>
-	<div class="display-section">
+		<div class="display-section">
+			<form>
+				<label for="from-station">
+					<span>From station</span>
+					<input id="from-station" type="text" list="station-list" placeholder="From Station" required="true"/>
+				</label>
+				<label for="to-station">
+					<span>To station</span>
+					<input id="to-station" type="text" placeholder="To Station" list="station-list"/>
+				</label>
+				<datalist id="station-list">
+					<option value="Fremont" abbreviation="FRM"/>
+				</datalist>
+			</form>
+		</div>
+		<div class="display-section" id="display-schedule">
+			<label>Schedule information:</label>
+			<div id="replace-me"></div>
+		</div>		
 	</div>
 	<script type="text/javascript" src="js/main.js"></script>
 </body>

@@ -1,8 +1,8 @@
 import idb from 'idb';
-//var idb = require('idb');
 
 var fromStationInput = document.getElementById('from-station');
 var toStationInput = document.getElementById('to-station');
+var displaScheduleOutput = document.getElementById('replace-me');
 
 var stationList = document.getElementById('station-list');
 var optionHTML = '<option value="%value-data%" abbreviation="%abbr-data%">%abbr-data%</option>';
@@ -10,6 +10,15 @@ var stationInnerHTML = '';
 var stationRequest = new Request('http://api.bart.gov/api/stn.aspx?cmd=stns&key=MW9S-E7SL-26DU-VV8V');
 var stationsLookup = {};
 var scheduleDepartTemplate = 'http://api.bart.gov/api/sched.aspx?cmd=depart&orig=%orig%&dest=%dest%&key=MW9S-E7SL-26DU-VV8V';
+var scheduleHTML = '';
+var scheduleLineHTML = '<div class="display-section">%schedule%</div>';
+var noScheduleHTML = '<div>Schedule not available</div>';
+var scheduleAvailable = true;
+
+var tripHTML = '<div class="display-section"></div>';
+var lineHTML = '<div class="line">%schedule%</div>';
+var tripStartHTML = '<div class="display-section">';
+var tripEndHTML = '</div>'
 
 function getXML(request){
 	return fetch(request).then(function(response){
@@ -58,6 +67,26 @@ function showOfflineStations(){
 		objectStore.getAll().then(function(stations){
 			showStations(stations);
 		});
+		var defaultStore = db.transaction('default').objectStore('default');
+		var origin, destination;
+		defaultStore.get('from').then(function(valueObj){
+			origin = valueObj.value;
+			if(valueObj){
+				fromStationInput.value = valueObj.value;
+			}
+			if(origin && destination)
+				showPopulateSchedule(origin, destination);
+		});
+		defaultStore.get('to').then(function(valueObj){
+			destination = valueObj.value;
+			if(valueObj){
+				toStationInput.value = valueObj.value;
+			}
+			if(origin && destination)
+				showPopulateSchedule(origin, destination);
+		});
+		
+		
 	});
 }
 function getKeyByValueOrKey(dict, value){
@@ -82,12 +111,12 @@ function showStations(stations){
 
 //Register service worker
 function registerServiceWorker(){
-if(navigator.serviceWorker){
-	navigator.serviceWorker.register('sw.js', {scope:'/'}).then(function(registration){ 
-	}).catch(function(error){ 
-		console.log(error);
-	});
-}
+	if(navigator.serviceWorker){
+		navigator.serviceWorker.register('sw.js', {scope:'/'}).then(function(registration){ 
+		}).catch(function(error){ 
+			console.log(error);
+		});
+	}
 }
 
 
@@ -136,24 +165,16 @@ function openDatabase(){
 	if(!navigator.serviceWorker){
 		return Promise.resolve();
 	}
-	return idb.open('bart',2 ,function(upgradeDb){
+	return idb.open('bart',1 ,function(upgradeDb){
 		switch(upgradeDb.version){
-		case 0:
+			case 1:
 			upgradeDb.createObjectStore('stations', {keyPath : 'id'});
-		case 2:
-			var store = upgradeDb.createObjectStore('schedule', {keyPath : ['from', 'to'] });
-			store.createIndex('byStation', ['from', 'to'], {unique: true});
-	}
+			upgradeDb.createObjectStore('schedule', {keyPath : ['from', 'to'] });
+			upgradeDb.createObjectStore('default', {keyPath: 'id'});
+		}
 	} );
 }
 
-
-showOfflineStations().then(function(){
-	populateAndShowStations();
-}).catch(function(error){
-	console.log('Error showing offline stations: ', error);
-	populateAndShowStations();
-});
 
 function showSchedule(){
 	var scheduleRequest = new Request(scheduleDepartTemplate.replace('%orig%', '24th').replace('%dest%', 'rock'));
@@ -163,9 +184,10 @@ function showSchedule(){
 }
 
 function showPopulateSchedule(origin, destination){
+	if(!origin || !destination) return;
 	showOfflineSchedule(origin, destination).then(function(){
 		populateSchedule(origin, destination);
-	})
+	});
 }
 
 function fromStationChange(event){
@@ -174,15 +196,29 @@ function fromStationChange(event){
 	if(!fromStation || !toStation) return;
 	var fromStatAbbr = getKeyByValueOrKey(stationsLookup, fromStation);
 	var toStatAbbr = getKeyByValueOrKey(stationsLookup, toStation);
-	console.log('from station ',fromStatAbbr);
-	console.log('to station ',toStatAbbr);
-	showPopulateSchedule(fromStatAbbr, toStatAbbr);
+	if(fromStatAbbr && toStatAbbr)
+		showPopulateSchedule(fromStatAbbr, toStatAbbr);
+	else
+		showNoSchedule();
+}
+
+function storeDefaultValues(origin, destination){	
+	console.log('.......... defaulting...');
+	openDatabase().then(function(db){
+		var defaultStore = db.transaction('default', 'readwrite').objectStore('default');
+		var fromObject = {id : 'from', value : origin};
+		var toObject = {id : 'to', value : destination};
+		defaultStore.put(fromObject);
+		defaultStore.put(toObject);
+	});
 }
 
 function populateSchedule(origin, destination){
 	if(!origin || !destination) return;
+	console.log('entered populateSchedule schedules');
 	var scheduleRequest = new Request(scheduleDepartTemplate.replace('%orig%', origin).replace('%dest%', destination));
 	getJSON(scheduleRequest).then(function(responseJSON){
+		if(!responseJSON.root.schedule.request) return;
 		showSchedule(responseJSON.root.schedule.request.trip);
 		console.log('schedule response ', responseJSON);
 		return openDatabase().then(function(db){
@@ -197,6 +233,8 @@ function populateSchedule(origin, destination){
 		responseJSON.root.schedule.request.trip.forEach(function(trip){
 			console.log(trip);
 		});
+	}).catch(function(error){
+		console.log('getJSON error : ', error);
 	});
 }
 
@@ -206,14 +244,46 @@ function showOfflineSchedule(origin, destination){
 		var store = db.transaction('schedule').objectStore('schedule');
 		var key = [origin, destination];
 		return store.get(key).then(function(trips){
-			showSchedule(trips);
+			if(trips)
+				showSchedule(trips);
+			else
+				showNoSchedule();
+			storeDefaultValues(origin, destination);
+		}).catch(function(error){
+			showNoSchedule();
 		});
 	});	
 }
 
 function showSchedule(trips){
-	if(!trips) return;
+	scheduleAvailable = true;
+	scheduleHTML = '';
+	trips.forEach(function(trip){
+		var tripScheduleHTML = '';
+		var scheduleLine = '';
+		if(trip.leg.forEach){
+			trip.leg.forEach(function(leg){
+				var line = lineHTML.replace('%schedule%', leg['@attributes'].origTimeMin);
+				scheduleLine += line;
+			});
 
+		}
+		else {
+			var line = lineHTML.replace('%schedule%', trip.leg['@attributes'].origTimeMin);
+			scheduleLine += line;
+		}
+		scheduleHTML+=tripStartHTML + scheduleLine + tripEndHTML;
+	});
+	displaScheduleOutput.innerHTML = scheduleHTML;
+
+
+}
+
+function showNoSchedule(){
+	if(scheduleAvailable){
+		scheduleAvailable = false;
+		displaScheduleOutput.innerHTML = noScheduleHTML;
+	}
 }
 
 function toStationChange(event){
@@ -234,3 +304,10 @@ function addEventListeners(){
 
 
 addEventListeners();
+registerServiceWorker();
+showOfflineStations().then(function(){
+	populateAndShowStations();
+}).catch(function(error){
+	console.log('Error showing offline stations: ', error);
+	populateAndShowStations();
+});
