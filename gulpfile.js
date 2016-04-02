@@ -10,6 +10,9 @@ var sourcemaps = require('gulp-sourcemaps');
 var source = require('vinyl-source-stream');
 var buffer = require('vinyl-buffer');
 var eslint = require('gulp-eslint');
+var minifyCss = require('gulp-minify-css');
+var postcss      = require('gulp-postcss');
+var autoprefixer = require('autoprefixer');
 
 gulp.task('js-bundle', function(){
 	var bundler = browserify('src/js/main.js', { debug: true }).transform(babelify);
@@ -37,11 +40,13 @@ gulp.task('html', function() {
 
 gulp.task('css', function(){
 	return gulp.src('src/css/*.css')
+	.pipe(minifyCss({compatibility: 'ie8'}))
+    .pipe(postcss([ autoprefixer({ browsers: ['last 2 versions'] }) ]))
 	.pipe(gulp.dest('dist/css'));
 });
 
 gulp.task('lint', function(){
-	return gulp.src('src/js/*.js').pipe(eslint()).pipe(eslint.format());
+	return gulp.src(['src/js/*.js', 'src/*.js']).pipe(eslint()).pipe(eslint.format());
 });
 
 gulp.task('watch-src', function(){

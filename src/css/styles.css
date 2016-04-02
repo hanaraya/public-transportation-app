@@ -1,3 +1,9 @@
+body {
+  font-family: 'Open Sans', sans-serif;
+  margin: 0px;
+  background: #fafafa;
+}
+
 header {
   font-size: 1.5em;
   position: fixed;
@@ -42,4 +48,34 @@ label {
 input {
   font-size: 1em;
   width: 95%;
+}
+
+input[aria-invalid="true"]
+{
+  border:1px solid #f00;
+  box-shadow:0 0 4px 0 #f00;
+}
+
+.flex-container {
+  display: flex;
+  justify-content: space-between;
+}
+
+.flex-vertical {
+  flex-direction: column;
+}
+
+.flex-horizontal {
+  flex-direction: row;
+  margin-bottom: 0.2em;
+}
+
+
+
+.flex-1 {
+  flex: 1 1 50%;
+}
+
+.flex-2 {
+  flex: 2 1 50% ;
 }
