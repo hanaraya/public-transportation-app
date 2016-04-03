@@ -1,7 +1,6 @@
 var gulp = require('gulp');
 var browserSync = require('browser-sync').create();
 var reload = browserSync.reload;
-var uglify = require('gulp-uglify');
 var browserify = require('browserify');
 var minifyHTML = require('gulp-minify-html');
 var minifyInline = require('gulp-minify-inline');
@@ -13,6 +12,7 @@ var eslint = require('gulp-eslint');
 var minifyCss = require('gulp-minify-css');
 var postcss      = require('gulp-postcss');
 var autoprefixer = require('autoprefixer');
+var minifyJS = require('gulp-minify');
 
 gulp.task('js-bundle', function(){
 	var bundler = browserify('src/js/main.js', { debug: true }).transform(babelify);
@@ -27,7 +27,7 @@ gulp.task('js-bundle', function(){
 
 gulp.task('sw', function(){
 	return gulp.src('src/*.js')
-	.pipe(uglify())
+	.pipe(minifyJS())
 	.pipe(gulp.dest('dist/'));
 });
 

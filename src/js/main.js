@@ -16,20 +16,69 @@ var scheduleDepartTemplate = 'http://api.bart.gov/api/sched.aspx?cmd=depart&orig
 var scheduleHTML = '';
 var noScheduleHTML = '<div>Schedule not available</div>';
 var scheduleAvailable = true;
-var tripStartHTML = '<div class="display-section">';
+var tripStartHTML = '<div class="display-section"><strong>Trip Duration:</strong> %trip-duration% mins';
 var tripEndHTML = '</div>';
-var lineHTML = '<div><strong>Leg %leg-number%</strong></div>'+
-				'<div class="flex-container flex-horizontal">'+
-					'<div class = "flex-2">'+
-						'<div><strong>From:</strong> %from-station% (%from-abbr%)</div>'+
-						'<div><strong>Departure:</strong> %depart-time%</div>'+
-					'</div>'+
-					'<div class = "flex-1">'+
-						'<div><strong>To:</strong> %to-station% (%to-abbr%)</div>'+
-						'<div><strong>Arrival:</strong> %arrival-time%</div>'+
-					'</div>'+
-				'</div>';
+var lineHTML = '<div class="flex-container flex-horizontal">'+
+'<div class = "flex-2">'+
+'<div><strong>Leg %leg-number%</strong></div>'+
+'<div><strong>From:</strong> %from-station% (%from-abbr%)</div>'+
+'<div><strong>Departure:</strong> %depart-time%</div>'+
+'</div>'+
+'<div class = "flex-1">'+
+'<div><strong>Leg Duration:</strong> %leg-duration% mins</div>'+
+'<div><strong>To:</strong> %to-station% (%to-abbr%)</div>'+
+'<div><strong>Arrival:</strong> %arrival-time%</div>'+
+'</div>'+
+'</div>';
 var breakHTML = '<hr>';
+
+function getDuration(trip){
+	var originTimeStr = trip['@attributes'].origTimeDate + ' ' + trip['@attributes'].origTimeMin;
+	var originTimeDate = new Date(originTimeStr);
+	var destTimeStr = trip['@attributes'].destTimeDate + ' ' + trip['@attributes'].destTimeMin;
+	var destTimeDate = new Date(destTimeStr);
+	var duration = (destTimeDate - originTimeDate) / (60 * 1000);
+	return duration;
+}
+
+function getScheduleObject(trips){
+	var schedule = {}
+	var tripsArray = [];
+	var legsArray = [];
+	var legObject = {};
+	var tripObject = {};
+	trips.forEach(function(trip){
+		tripObject = {};
+		legsArray = [];
+		if(trip.leg.forEach){
+			trip.leg.forEach(function(leg){
+				legObject = {origTimeMin: leg['@attributes'].origTimeMin,
+				destTimeMin: leg['@attributes'].destTimeMin,
+				origin: leg['@attributes'].origin,
+				destination: leg['@attributes'].destination,
+				order: leg['@attributes'].order,
+				duration: getDuration(leg)
+			}
+			legsArray.push(legObject);
+		});
+		}
+		else{
+
+			legObject = {origTimeMin: trip.leg['@attributes'].origTimeMin,
+			destTimeMin: trip.leg['@attributes'].destTimeMin,
+			origin: trip.leg['@attributes'].origin,
+			destination: trip.leg['@attributes'].destination,
+			order: trip.leg['@attributes'].order
+		}
+		legsArray.push(legObject);
+	}
+	tripObject = {duration: getDuration(trip), leg : legsArray};
+
+	tripsArray.push(tripObject);
+});
+return tripsArray;
+
+}
 
 function getXML(request){
 	return fetch(request).then(function(response){
@@ -179,7 +228,7 @@ function openDatabase(){
 	}
 	return idb.open('bart',1 ,function(upgradeDb){
 		switch(upgradeDb.version){
-		case 1:
+			case 1:
 			upgradeDb.createObjectStore('stations', {keyPath : 'id'});
 			upgradeDb.createObjectStore('schedule', {keyPath : ['from', 'to'] });
 			upgradeDb.createObjectStore('default', {keyPath: 'id'});
@@ -222,21 +271,25 @@ function storeDefaultValues(origin, destination){
 	});
 }
 
+
+
 function populateSchedule(origin, destination){
 	if(!origin || !destination) return;
 	var scheduleRequest = new Request(scheduleDepartTemplate.replace('%orig%', origin).replace('%dest%', destination));
 	getJSON(scheduleRequest).then(function(responseJSON){
 		if(!responseJSON.root.schedule.request) return;
-		showSchedule(responseJSON.root.schedule.request.trip);
+		var scheduleObject = getScheduleObject(responseJSON.root.schedule.request.trip);
+		showSchedule(scheduleObject);
 		return openDatabase().then(function(db){
 			if(!db) return;
-			var trips = responseJSON.root.schedule.request.trip;
+			var trips = scheduleObject;
 			trips.from = origin;
 			trips.to = destination;
 			var store = db.transaction('schedule', 'readwrite').objectStore('schedule');
 			store.put(trips);
 		});
 	}).catch(function(error){
+		if(!error) return;
 	});
 }
 
@@ -258,12 +311,12 @@ function showOfflineSchedule(origin, destination){
 
 function generateLegHTML(leg){
 	if(!leg) return;
-	return	lineHTML.replace('%depart-time%', leg['@attributes'].origTimeMin)
-							.replace('%arrival-time%', leg['@attributes'].destTimeMin)
-							.replace('%from-station%', stationsLookup[leg['@attributes'].origin])
-							.replace('%to-station%', stationsLookup[leg['@attributes'].destination])
-							.replace('%from-abbr%', leg['@attributes'].origin)
-							.replace('%to-abbr%', leg['@attributes'].destination);
+	return	lineHTML.replace('%depart-time%', leg.origTimeMin)
+	.replace('%arrival-time%', leg.destTimeMin)
+	.replace('%from-station%', stationsLookup[leg.origin])
+	.replace('%to-station%', stationsLookup[leg.destination])
+	.replace('%from-abbr%', leg.origin)
+	.replace('%to-abbr%', leg.destination);
 }
 
 function showSchedule(trips){
@@ -275,7 +328,12 @@ function showSchedule(trips){
 			trip.leg.forEach(function(leg){
 				if(scheduleLine!=='')
 					scheduleLine += breakHTML;
-				var line = generateLegHTML(leg).replace('%leg-number%', leg['@attributes'].order);
+				var line = '';
+				if(trip.leg.length == 1)
+					line = generateLegHTML(leg).replace('<div><strong>Leg %leg-number%</strong></div>', '').replace('<div><strong>Leg Duration:</strong> %leg-duration% mins</div>', '');
+				else{					
+					line = generateLegHTML(leg).replace('%leg-number%', leg.order).replace('%leg-duration%', leg.duration);
+				}
 				scheduleLine += line;
 			});
 
@@ -284,7 +342,7 @@ function showSchedule(trips){
 			var line = generateLegHTML(trip.leg).replace('<strong>Leg %leg-number%</strong>', '');
 			scheduleLine += line;
 		}
-		scheduleHTML+=tripStartHTML + scheduleLine + tripEndHTML;
+		scheduleHTML+=tripStartHTML.replace('%trip-duration%', trip.duration) + scheduleLine + tripEndHTML;
 	});
 	displaScheduleOutput.innerHTML = scheduleHTML;
 
