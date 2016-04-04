@@ -20,10 +20,10 @@ gulp.task('js-bundle', function(){
 	return bundler.bundle()
       .on('error', function(err) { console.error(err); this.emit('end'); })
       .pipe(source('main.js'))
-      .pipe(buffer())      
-      .pipe(sourcemaps.init({ loadMaps: true }))
+      .pipe(buffer())  
       .pipe(minifyJS({noSource: true}))
-      .pipe(rename('main.js'))
+      .pipe(rename('main.js'))                      
+      .pipe(sourcemaps.init({ loadMaps: true }))
       .pipe(sourcemaps.write('./'))
       .pipe(gulp.dest('dist/js'));
 });
