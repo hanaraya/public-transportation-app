@@ -28,6 +28,7 @@
     "gulp-minify-html": "^1.0.6",
     "gulp-minify-inline": "^0.2.0",
     "gulp-postcss": "^6.1.0",
+    "gulp-rename": "^1.2.2",
     "gulp-sourcemaps": "^1.6.0",
     "idb": "^1.1.0",
     "vinyl-buffer": "^1.0.0",

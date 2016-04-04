@@ -13,21 +13,25 @@ var minifyCss = require('gulp-minify-css');
 var postcss      = require('gulp-postcss');
 var autoprefixer = require('autoprefixer');
 var minifyJS = require('gulp-minify');
+var rename = require('gulp-rename');
 
 gulp.task('js-bundle', function(){
 	var bundler = browserify('src/js/main.js', { debug: true }).transform(babelify);
 	return bundler.bundle()
       .on('error', function(err) { console.error(err); this.emit('end'); })
       .pipe(source('main.js'))
-      .pipe(buffer())
+      .pipe(buffer())      
       .pipe(sourcemaps.init({ loadMaps: true }))
+      .pipe(minifyJS({noSource: true}))
+      .pipe(rename('main.js'))
       .pipe(sourcemaps.write('./'))
       .pipe(gulp.dest('dist/js'));
 });
 
 gulp.task('sw', function(){
-	return gulp.src('src/*.js')
-	.pipe(minifyJS())
+	return gulp.src('src/sw.js')
+	.pipe(minifyJS({noSource: true}))
+    .pipe(rename('sw.js'))
 	.pipe(gulp.dest('dist/'));
 });
 
