@@ -22,9 +22,7 @@ gulp.task('js-bundle', function(){
       .pipe(source('main.js'))
       .pipe(buffer())  
       .pipe(minifyJS({noSource: true}))
-      .pipe(rename('main.js'))                      
-      .pipe(sourcemaps.init({ loadMaps: true }))
-      .pipe(sourcemaps.write('./'))
+      .pipe(rename('main.js'))
       .pipe(gulp.dest('dist/js'));
 });
 
