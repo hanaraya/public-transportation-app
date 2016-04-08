@@ -33,11 +33,17 @@ var lineHTML = '<div class="flex-container flex-horizontal">'+
 var breakHTML = '<hr>';
 
 function getDuration(trip){
+	console.log('check dates ', trip);
 	var originTimeStr = trip['@attributes'].origTimeDate + ' ' + trip['@attributes'].origTimeMin;
 	var originTimeDate = new Date(originTimeStr);
 	var destTimeStr = trip['@attributes'].destTimeDate + ' ' + trip['@attributes'].destTimeMin;
-	var destTimeDate = new Date(destTimeStr);
-	var duration = (destTimeDate - originTimeDate) / (60 * 1000);
+	var destinationTimeDate = new Date(destTimeStr);
+	var duration = (destinationTimeDate - originTimeDate) / (60 * 1000);
+	//This logic is added to fix issue #2 as the BART date representation for 12:00 AM is incorrect
+	if(trip['@attributes'].origTimeMin === '12:00 AM')
+		duration -= (24 * 60);
+	if(trip['@attributes'].destTimeMin === '12:00 AM')
+		duration += (24 * 60);
 	return duration;
 }
 
@@ -76,7 +82,7 @@ function getScheduleObject(trips){
 
 	tripsArray.push(tripObject);
 });
-return tripsArray;
+	return tripsArray;
 
 }
 
