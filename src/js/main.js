@@ -33,7 +33,6 @@ var lineHTML = '<div class="flex-container flex-horizontal">'+
 var breakHTML = '<hr>';
 
 function getDuration(trip){
-	console.log('check dates ', trip);
 	var originTimeStr = trip['@attributes'].origTimeDate + ' ' + trip['@attributes'].origTimeMin;
 	var originTimeDate = new Date(originTimeStr);
 	var destTimeStr = trip['@attributes'].destTimeDate + ' ' + trip['@attributes'].destTimeMin;
