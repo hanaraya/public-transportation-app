@@ -2,7 +2,7 @@ var gulp = require('gulp');
 var browserSync = require('browser-sync').create();
 var reload = browserSync.reload;
 var browserify = require('browserify');
-var minifyHTML = require('gulp-minify-html');
+var htmlmin = require('gulp-htmlmin');
 var minifyInline = require('gulp-minify-inline');
 var babelify = require('babelify');
 var sourcemaps = require('gulp-sourcemaps');
@@ -36,7 +36,7 @@ gulp.task('sw', function(){
 gulp.task('html', function() {
 	return gulp.src('src/*.html')
 	.pipe(minifyInline())
-	.pipe(minifyHTML())
+	.pipe(htmlmin({collapseWhitespace: true}))
 	.pipe(gulp.dest('dist/'));
 });
 
