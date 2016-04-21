@@ -7,7 +7,7 @@ var fromStationInput = document.getElementById('from-station');
 var toStationInput = document.getElementById('to-station');
 var displaScheduleOutput = document.getElementById('replace-me');
 
-var stationList = document.getElementById('station-list');
+var stationList = document.getElementById('select-station-list');
 var optionHTML = '<option value="%value-data%" abbreviation="%abbr-data%">%abbr-data%</option>';
 var stationInnerHTML = '';
 var stationRequest = new Request('http://api.bart.gov/api/stn.aspx?cmd=stns&key=MW9S-E7SL-26DU-VV8V');
