@@ -1,5 +1,5 @@
 # public-transportation-app
-A Webapp for BART schedules
+An offline-first public transportation application that allows users to see a list of trains, times, and durations - regardless of the quality of the user's connection. Makes use of newly provided APIs available to the browser like Service Workers.
 
 ### Instruction for running the project:  
 
